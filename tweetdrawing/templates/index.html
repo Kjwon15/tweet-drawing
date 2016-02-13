@@ -3,4 +3,24 @@
 {% block title %}Index{% endblock %}
 
 {% block body %}
+{% if drawings %}
+<div class="mdl-grid">
+    {% for drawing in drawings %}
+    <div class="mdl-cell mdl-cell--6-col mdl-card mdl-shadow--2dp">
+        <div class="mdl-card__title">
+            {{ drawing.status_id | get_embed_tweet | safe }}
+            <div class="mdl-card__title_text">
+                {{ drawing.datetime }}
+            </div>
+        </div>
+        <div class="mdl-card__actions mdl-card--border">
+            <button class="mdl-button mdl-button--colored mdl-js-button"
+                data-statusid="{{ drawing.status_id }}">
+                Delete
+            </button>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 {% endblock %}

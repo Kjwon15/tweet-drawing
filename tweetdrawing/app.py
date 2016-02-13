@@ -7,7 +7,7 @@ from flask_oauth import OAuth
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from .models import Base, User
+from .models import Base, Drawing, User
 
 app = Flask(__name__)
 oauth = OAuth()
@@ -28,6 +28,17 @@ twitter = oauth.remote_app(
 )
 
 db_session = None
+
+
+def get_embed_tweet(status_id):
+    resp = twitter.get('statuses/oembed.json', data={
+        'id': status_id,
+        'align': 'center',
+    })
+    return resp.data['html']
+
+
+app.jinja_env.filters['get_embed_tweet'] = get_embed_tweet
 
 
 @app.before_first_request
@@ -84,7 +95,11 @@ def oauth_authorized(resp):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    drawings = None
+
+    if g.user:
+        drawings = Drawing.query.filter(Drawing.user == g.user)
+    return render_template('index.html', drawings=drawings)
 
 
 @app.route('/login')
