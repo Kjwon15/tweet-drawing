@@ -2,25 +2,54 @@
 
 {% block title %}Index{% endblock %}
 
+{% block head %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}
+
 {% block body %}
-{% if drawings %}
+{% if g.user %}
 <div class="mdl-grid">
-    {% for drawing in drawings %}
-    <div class="mdl-cell mdl-cell--6-col mdl-card mdl-shadow--2dp">
-        <div class="mdl-card__title">
-            {{ drawing.status_id | get_embed_tweet | safe }}
-            <div class="mdl-card__title_text">
-                {{ drawing.datetime }}
-            </div>
+  <div class="mdl-cell mdl-cell--6-col mdl-card mdl-shadow--2dp">
+    <form action="{{ url_for('make_drawing') }}" method="post" enctype="multipart/form-data">
+      <div class="mdl-card__title mdl-grid">
+        <div class="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--12-col">
+          <textarea name="tweet" class="mdl-textfield__input" id="input-tweet"></textarea>
+          <label for="input-tweet" class="mdl-textfield__label">Tweet</label>
         </div>
-        <div class="mdl-card__actions mdl-card--border">
-            <button class="mdl-button mdl-button--colored mdl-js-button"
-                data-statusid="{{ drawing.status_id }}">
-                Delete
-            </button>
+        <div class="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--12-col">
+          <textarea name="message" class="mdl-textfield__input" id="input-message"></textarea>
+          <label for="input-message" class="mdl-textfield__label">Message</label>
         </div>
+        <div class="mdl-textfield mdl-js-textfield mdl-cell mdl-cell--12-col">
+          <select name="period" class="mdl-textfield__input">
+            <option value="24h">24 hours later</option>
+            <option value="48h">48 hours later</option>
+          </select>
+        </div>
+      </div>
+      <div class="mdl-card__actions mdl-card--border">
+        <button type="submit" class="mdl-button mdl-js-button mdl-button--colored">Create</button>
+      </div>
+    </form>
+  </div>
+  {% if drawings %}
+  {% for drawing in drawings %}
+  <div class="mdl-cell mdl-cell--6-col mdl-card mdl-shadow--2dp">
+    <div class="mdl-card__title">
+      {{ drawing.status_id | get_embed_tweet | safe }}
     </div>
-    {% endfor %}
+      <div class="mdl-card__supporting-text">
+        End at {{ drawing.datetime }}
+      </div>
+    <div class="mdl-card__actions mdl-card--border">
+      <button class="delete_drawing mdl-button mdl-button--colored mdl-js-button"
+        data-statusid="{{ drawing.status_id }}">
+        Delete
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
 </div>
 {% endif %}
 {% endblock %}

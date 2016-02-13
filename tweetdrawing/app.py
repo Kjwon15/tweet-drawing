@@ -1,6 +1,8 @@
 import os
 
-from flask import Flask, request, redirect, url_for, session, flash, g, \
+import datetime
+
+from flask import Flask, jsonify, request, redirect, url_for, session, flash, g, \
     render_template
 from flask_oauth import OAuth
 
@@ -35,7 +37,11 @@ def get_embed_tweet(status_id):
         'id': status_id,
         'align': 'center',
     })
-    return resp.data['html']
+
+    if resp.status == 200:
+        return resp.data['html']
+
+    return 'Invalid tweet'
 
 
 app.jinja_env.filters['get_embed_tweet'] = get_embed_tweet
@@ -115,6 +121,58 @@ def logout():
     session.pop('user_id', None)
     flash('You were signed out')
     return redirect(request.referrer or url_for('index'))
+
+
+@app.route('/make-drawing', methods=['POST'])
+def make_drawing():
+    try:
+        tweet = request.form.get('tweet')
+        message = request.form.get('message')
+        period = request.form.get('period')
+    except KeyError as e:
+        flash('Please complete the form. {}'.format(e))
+        return redirect(request.referrer)
+    else:
+        resp = twitter.post('statuses/update.json', data={
+            'status': tweet
+        })
+        if resp.status != 200:
+            for error in resp.data['errors']:
+                flash(error['message'])
+            return redirect(request.referrer)
+
+        if period == '24h':
+            endtime = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        elif period == '48h':
+            endtime = datetime.datetime.utcnow() + datetime.timedelta(hours=48)
+
+        drawing = Drawing(resp.data['id'], message, endtime)
+        drawing.user = g.user
+        db_session.add(drawing)
+        db_session.commit()
+
+    return redirect(url_for('index'))
+
+
+@app.route('/delete-drawing', methods=['DELETE'])
+def delete_drawing():
+    try:
+        status_id = request.form.get('status_id')
+    except KeyError:
+        flash('Status id error')
+        return redirect(request.referrer)
+    else:
+        drawing = Drawing.query.get(status_id)
+        if drawing is None or drawing.user != g.user:
+            flash('Invalid status id')
+            return redirect(request.referrer)
+
+        db_session.delete(drawing)
+        db_session.commit()
+
+    return jsonify({
+        'status': 'success',
+    })
 
 
 if __name__ == '__main__':
