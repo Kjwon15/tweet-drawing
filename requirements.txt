@@ -3,3 +3,4 @@ Flask-OAuth>=0.12
 SQLAlchemy>=1.0.11
 tweepy>=3.5.0
 uWSGI>=2.0.12
+psycopg2>=2.6.1
