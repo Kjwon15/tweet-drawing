@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        <link rel="stylesheet" href="https://code.getmdl.io/1.1.1/material.indigo-pink.min.css">
+        <script defer src="https://code.getmdl.io/1.1.1/material.min.js"></script>
+        <title>{% block title %}Index{% endblock %} - Tweet drawing</title>
+    </head>
+    <body>
+      <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+        <header class="mdl-layout__header">
+          <div class="mdl-layout__header-row">
+            <h1 class="mdl-layout-title">Tweet drawing</h1>
+            <div class="mdl-layout-spacer"></div>
+            <nav class="mdl-navigation mdl-layout--large-screen-only">
+              {% if not g.user %}
+              <a class="mdl-navigation__link" href="{{ url_for('login') }}">Login</a>
+              {% else %}
+              <a class="mdl-navigation__link" href="{{ url_for('logout') }}">Logout</a>
+              {% endif %}
+            </nav>
+          </div>
+        </header>
+        <div class="mdl-layout__drawer">
+            <nav class="mdl-navigation mdl-layout--small-screen-only">
+              {% if not g.user %}
+              <a class="mdl-navigation__link" href="{{ url_for('login') }}">Login</a>
+              {% else %}
+              <a class="mdl-navigation__link" href="{{ url_for('logout') }}">Logout</a>
+              {% endif %}
+          </nav>
+        </div>
+        <main class="mdl-layout__content">
+          <div class="page-content">{% block body %}{% endblock %}</div>
+        </main>
+      </div>
+      <div id="toast-box" class="mdl-snackbar mdl-js-snackbar">
+          <div class="mdl-snackbar__text"></div>
+          <button class="mdl-snackbar__action" type="button"></button>
+      </div>
+      {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <script>
+          window.addEventListener('load', function(){
+              setTimeout(() => {
+                  var messages = {{ messages|tojson|safe }};
+                  var container = document.querySelector('#toast-box');
+                  messages.forEach(msg => {
+                      var data = {message: msg};
+                      container.MaterialSnackbar.showSnackbar(data);
+                  });
+              }, 1000);
+          });
+      </script>
+      {% endif %}
+      {% endwith %}
+    </body>
+</html>
+
