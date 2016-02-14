@@ -1,7 +1,10 @@
 import datetime
+import logging
 import os
 import random
+import time
 
+import schedule
 import tweepy
 
 from sqlalchemy import create_engine
@@ -18,28 +21,49 @@ CONSUMER_KEY = os.environ.get('CONSUMER_KEY')
 CONSUMER_SECRET = os.environ.get('CONSUMER_SECRET')
 
 
+def do_drawing(drawing):
+    logger = logging.getLogger(__name__)
+    user = drawing.user
+    message = drawing.message
+
+    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+    auth.set_access_token(user.oauth_token, user.oauth_secret)
+    api = tweepy.API(auth)
+
+    logger.info('drwaing for {}'.format(drawing.status_id))
+
+    cursor = tweepy.Cursor(api.retweeters, drawing.status_id)
+    retweeters = list(cursor.items())
+    if retweeters:
+        chosen = random.choice(list(retweeters))
+        retweeter = api.get_user(chosen)
+        logger.debug(message.format(
+            user=retweeter.name, name=retweeter.screen_name))
+    else:
+        logger.info('Nobody has retweeted this.')
+
+
 def draw_pending():
     now = datetime.datetime.utcnow()
 
     for drawing in Drawing.query.filter(Drawing.datetime <= now):
-        user = drawing.user
-        message = drawing.message
-
-        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
-        auth.set_access_token(user.oauth_token, user.oauth_secret)
-        api = tweepy.API(auth)
-
-        print('{}: {}'.format(api.me().screen_name, message))
-
-        cursor = tweepy.Cursor(api.retweeters, drawing.status_id)
-        retweeters = list(cursor.items())
-        if retweeters:
-            chosen = random.choice(list(retweeters))
-            retweeter = api.get_user(chosen)
-            print(message.format(user=retweeter.name, name=retweeter.screen_name))
+        try:
+            do_drawing(drawing)
+        except Exception as e:
+            logger.error(e)
         else:
-            print('Nobody has retweeted this.')
+            session.delete(drawing)
+
+    session.commit()
+    session.close()
 
 
 if __name__ == '__main__':
-    draw_pending()
+    logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s')
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+    schedule.every().minutes.do(draw_pending)
+    schedule.run_all()
+    while 1:
+        schedule.run_pending()
+        time.sleep(1)
