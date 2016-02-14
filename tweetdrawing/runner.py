@@ -37,10 +37,16 @@ def do_drawing(drawing):
     if retweeters:
         chosen = random.choice(list(retweeters))
         retweeter = api.get_user(chosen)
-        logger.debug(message.format(
-            user=retweeter.name, name=retweeter.screen_name))
+        msg = message.format(
+            user=retweeter.name, name=retweeter.screen_name)
     else:
-        logger.info('Nobody has retweeted this.')
+        msg = 'Nobody has retweeted this.'
+
+    msg = '{} #twtDraw https://filebo.xyz'.format(msg)
+
+    api.update_status(
+        status=msg,
+        in_reply_to_status_id=drawing.status_id)
 
 
 def draw_pending():
